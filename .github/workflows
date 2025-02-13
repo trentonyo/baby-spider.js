@@ -1,0 +1,96 @@
+name: Check links
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check-links:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout repository
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      # Step 2: Extract Deployment URL
+      - name: Set Deployment URL
+        id: set-url
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const deployment = context.payload.deployment;
+            const deploymentStatus = context.payload.deployment_status;
+
+            // Extract deployment URL if available
+            const url = deployment.payload?.web_url || deployment.payload?.url || deploymentStatus.target_url || null;
+
+            if (!url) {
+              console.log("Deployment payload:", JSON.stringify(deployment, null, 2));
+              console.log("Deployment status:", JSON.stringify(deploymentStatus, null, 2));
+              throw new Error("Could not find the Vercel preview URL in the deployment payload.");
+            }
+
+            console.log(`Deployment URL: ${url}`);
+            return url;
+          result-encoding: string
+
+      # Step 3: Set up Node.js Environment
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      # Step 4: Install Required Dependencies
+      - name: Install Dependencies
+        run: npm install jsdom
+
+      # Step 5: Run the Link Checking Script
+      - name: Check Links
+        env:
+          URL: ${{ steps.set-url.outputs.result }}
+          BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+        run: node ./scripts/check-links.js
+
+      # Step 6: Create Issues from Broken Links
+      - name: Create Issues for Broken Links
+        if: always()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const data = JSON.parse(fs.readFileSync('./broken-links.json', 'utf8'));
+
+            if (data.length === 0) {
+              console.log("🎉 No broken links found!");
+              return;
+            }
+
+            const issueTitles = new Set(); // To avoid duplicate issues
+
+            for (const brokenLink of data) {
+              const { url, status } = brokenLink;
+              const title = `Broken Link: ${url}`;
+
+              if (issueTitles.has(title)) continue; // Skip duplicates
+              issueTitles.add(title);
+
+              const body = `
+              **Broken Link Information**:
+              - **URL**: ${url}
+              - **Status**: ${status}`;
+
+              // Create a GitHub issue
+              const issue = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['broken-link'],
+              });
+
+              console.log(`Created issue #${issue.data.number}: ${title}`);
+            }
