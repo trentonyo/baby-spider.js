@@ -1,5 +1,6 @@
 
-const fetch = require('node-fetch');
+import fetch from 'node-fetch'
+import { JSDOM } from 'jsdom';
 const fs = require('fs');
 
 (async function enhancedLinkChecker() {
@@ -39,7 +40,6 @@ const fs = require('fs');
 
     // Helper: Parse HTML and extract links with metadata
     const extractLinksFromHtml = (html, pageUrl) => {
-        const { JSDOM } = require('jsdom');
         const dom = new JSDOM(html);
         const document = dom.window.document;
         const links = Array.from(document.querySelectorAll('a[href]')); // All anchor tags with href
