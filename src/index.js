@@ -57,9 +57,6 @@ import fs from 'fs';
         if (checkedLinks.has(current)) continue; // Skip already checked links
         checkedLinks.add(current); // Mark it as checked
 
-        const { JSDOM } = require('jsdom');
-
-// Inside the try block where you are processing `response`
         try {
             console.log(`🔗 Checking: ${current}`);
 
