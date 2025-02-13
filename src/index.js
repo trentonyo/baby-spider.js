@@ -1,11 +1,13 @@
-
-import fetch from 'node-fetch'
 import { JSDOM } from 'jsdom';
 import fs from 'fs';
+import {processLink} from "./processLink.js";
+
+
 
 (async function enhancedLinkChecker() {
     // Your starting URL
     const baseUrl = process.env.URL;
+    const collectAllMetadata = process.env.COLLECT_ALL_METADATA === 'true';
     const bypassKey = process.env.BYPASS_SECRET;
     const urlHost = new URL(baseUrl).host;
 
@@ -21,34 +23,7 @@ import fs from 'fs';
     const linksToCheck = [baseUrl];
     const checkedLinks = new Set();
     const brokenLinks = [];
-
-    // Helper: Normalize links (ignore fragments, etc.)
-    const normalizeUrl = (url) => {
-        try {
-            return new URL(url).toString().replace(/#.*$/, ''); // Remove fragments like #anchor
-        } catch {
-            return null; // Skip invalid/unsupported URLs
-        }
-    };
-
-    // Helper: Extract metadata for a link (id, class, text, URL found on)
-    const extractMetaData = (linkElement, pageUrl) => ({
-        id: linkElement.getAttribute('id') || null,
-        class: linkElement.getAttribute('class') || null,
-        text: linkElement.textContent.trim() || null,
-    });
-
-    // Helper: Parse HTML and extract links with metadata
-    const extractLinksFromHtml = (html, pageUrl) => {
-        const dom = new JSDOM(html);
-        const document = dom.window.document;
-        const links = Array.from(document.querySelectorAll('a[href]')); // All anchor tags with href
-
-        return links.map((anchor) => ({
-            url: normalizeUrl(new URL(anchor.href, pageUrl).href), // Resolve relative URLs
-            meta: extractMetaData(anchor, pageUrl), // Extract metadata
-        }));
-    };
+    const metadata = [];
 
     // Crawl links recursively
     while (linksToCheck.length > 0) {
@@ -60,55 +35,8 @@ import fs from 'fs';
         try {
             console.log(`🔗 Checking: ${current}`);
 
-            const currentHost = new URL(current).host; // Extract the host of the current link
-            if (currentHost !== urlHost) {
-                console.warn(`⏩ Skipping external link: ${current}`);
-                continue;
-            }
+            await processLink(current, urlHost, bypassKey, checkedLinks, linksToCheck, brokenLinks, collectAllMetadata, metadata);
 
-            const response = await fetch(current, {
-                headers: { 'x-vercel-protection-bypass': bypassKey },
-                redirect: 'follow',
-            });
-
-            if (!response.ok) {
-                console.error(`❌ Broken: ${current} (${response.status})`);
-
-                let elementMetadata = null;
-
-                // Parse response.body as HTML to potentially find the broken link
-                if (response.headers.get('content-type')?.includes('text/html')) {
-                    const html = await response.text();
-                    const dom = new JSDOM(html);
-                    const document = dom.window.document;
-
-                    // Try locating the link element related to the broken URL
-                    const brokenLinkElement = document.querySelector(`a[href="${current}"]`);
-                    elementMetadata = brokenLinkElement
-                        ? extractMetaData(brokenLinkElement, current)
-                        : null;
-
-                    // console.log("elementMetadata", elementMetadata, "brokenLinkElement", brokenLinkElement, "current", current, "html", html);
-                }
-
-                brokenLinks.push({
-                    url: current,
-                    status: response.status,
-                });
-                continue;
-            }
-
-            // Parse HTML to find more links if this is an HTML response
-            if (response.headers.get('content-type')?.includes('text/html')) {
-                const html = await response.text();
-                const links = extractLinksFromHtml(html, current);
-
-                for (const { url, meta } of links) {
-                    if (!checkedLinks.has(url)) {
-                        linksToCheck.push(url);
-                    }
-                }
-            }
         } catch (error) {
             console.error(`❌ Failed to fetch: ${current}`, error.message);
 
@@ -123,6 +51,13 @@ import fs from 'fs';
     const outputFileName = './broken-links.json';
     fs.writeFileSync(outputFileName, JSON.stringify(brokenLinks, null, 2), 'utf-8');
     console.warn(`📂 Broken links exported to ${outputFileName}`);
+
+    if (collectAllMetadata) {
+        // Write metadata to a structured JSON file
+        const outputFileName = './all-metadata.json';
+        fs.writeFileSync(outputFileName, JSON.stringify(metadata, null, 2), 'utf-8');
+        console.warn(`📂 All metadata exported to ${outputFileName}`);
+    }
 
     // Report results
     if (brokenLinks.length > 0) {
