@@ -1,7 +1,7 @@
 name: Check links in a Vercel preview
 
 on:
-  deploy_status:
+  deployment_status:
 
 permissions:
   contents: read
