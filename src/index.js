@@ -9,6 +9,8 @@ import {processLink} from "./processLink.js";
     const baseUrl = process.env.URL;
     const collectAllMetadata = process.env.COLLECT_ALL_METADATA === 'true';
     const bypassKey = process.env.BYPASS_SECRET;
+
+    console.log(`🕷 Starting crawl on: ${baseUrl}`);
     const urlHost = new URL(baseUrl).host;
 
     if (!baseUrl || !bypassKey) {
