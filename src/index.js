@@ -1,7 +1,7 @@
 
 import fetch from 'node-fetch'
 import { JSDOM } from 'jsdom';
-const fs = require('fs');
+import fs from 'fs';
 
 (async function enhancedLinkChecker() {
     // Your starting URL
