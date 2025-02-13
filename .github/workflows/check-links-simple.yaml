@@ -23,32 +23,24 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v3
 
-      # Step 2: Extract Deployment URL
-      - name: Set Deployment URL
-        id: set-url
-        uses: actions/github-script@v6
-        with:
-          script: return github.event.inputs.url;
-          result-encoding: string
-
-      # Step 3: Set up Node.js Environment
+      # Step 2: Set up Node.js Environment
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
-      # Step 4: Install Required Dependencies
+      # Step 3: Install Required Dependencies
       - name: Install Dependencies
         run: npm install jsdom
 
-      # Step 5: Run the Link Checking Script
+      # Step 4: Run the Link Checking Script
       - name: Check Links
         env:
-          URL: ${{ steps.set-url.outputs.result }}
+          URL: ${{ inputs.url }}
           BYPASS_SECRET: "none"
         run: node ./scripts/check-links.js
 
-      # Step 6: Create Issues from Broken Links
+      # Step 5: Create Issues from Broken Links
       - name: Create Issues for Broken Links
         if: ${{ inputs.create_issues == 'true' }} 
         uses: actions/github-script@v6
