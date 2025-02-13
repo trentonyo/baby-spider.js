@@ -6,6 +6,7 @@ on:
       url:
         required: true
       create_issues:
+        type: boolean
         description: "Whether to create GitHub issues for broken links"
         default: "false" 
         required: false
@@ -38,7 +39,7 @@ jobs:
         env:
           URL: ${{ inputs.url }}
           BYPASS_SECRET: "none"
-        run: node ./scripts/check-links.js
+        run: node ./src/check-links.js
 
       # Step 5: Create Issues from Broken Links
       - name: Create Issues for Broken Links
