@@ -53,7 +53,7 @@ jobs:
         env:
           URL: ${{ steps.set-url.outputs.result }}
           BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
-        run: node ./scripts/check-links.js
+        run: node ./src/index.js
 
       # Step 6: Create Issues from Broken Links
       - name: Create Issues for Broken Links
