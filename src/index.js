@@ -5,10 +5,16 @@ import {processLink} from "./processLink.js";
 
 
 (async function enhancedLinkChecker() {
-    // Your starting URL
-    const baseUrl = process.env.URL;
-    const collectAllMetadata = process.env.COLLECT_ALL_METADATA === 'true';
-    const bypassKey = process.env.BYPASS_SECRET;
+    // CLI arguments
+    const args = process.argv.slice(2); // Skip Node.js runtime and script path
+    const baseUrlArg = args[0]; // First argument: The base URL
+    const bypassKeyArg = args[1] || process.env.BYPASS_SECRET; // Second argument: bypassKey (fallback to env variable)
+    const collectAllMetadataArg = args.includes("--collect-all-metadata"); // Extra flag
+
+    // Settings
+    const baseUrl = process.env.URL || baseUrlArg;
+    const bypassKey = process.env.BYPASS_SECRET || bypassKeyArg;
+    const collectAllMetadata = process.env.COLLECT_ALL_METADATA === 'true' || collectAllMetadataArg;
 
     console.log(`🕷 Starting crawl on: ${baseUrl}`);
     const urlHost = new URL(baseUrl).host;
