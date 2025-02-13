@@ -1,7 +1,7 @@
-name: Check links
+name: Check links in a Vercel preview
 
 on:
-  workflow_dispatch:
+  deploy_status:
 
 permissions:
   contents: read
