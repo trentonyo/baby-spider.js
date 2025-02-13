@@ -46,7 +46,7 @@ jobs:
 
       # Step 4: Install Required Dependencies
       - name: Install Dependencies
-        run: npm install jsdom
+        run: npm install
 
       # Step 5: Run the Link Checking Script
       - name: Check Links
