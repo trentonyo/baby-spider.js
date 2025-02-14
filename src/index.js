@@ -8,7 +8,7 @@ import {processLink} from "./processLink.js";
     // CLI arguments
     const args = process.argv.slice(2); // Skip Node.js runtime and script path
     const baseUrlArg = args[0]; // First argument: The base URL
-    const bypassKeyArg = args[1] || process.env.BYPASS_SECRET; // Second argument: bypassKey (fallback to env variable)
+    const bypassKeyArg = args[1]; // Second argument: bypassKey 
     const collectAllMetadataArg = args.includes("--collect-all-metadata"); // Extra flag
 
     // Settings
